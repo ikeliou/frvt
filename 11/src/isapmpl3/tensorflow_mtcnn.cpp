@@ -36,7 +36,7 @@ static int load_file(const std::string & fname, std::vector<char>& buf)
 }
 
 
-TF_Session * load_graph(const char * frozen_fname, TF_Graph ** p_graph)
+void load_graph(const char * frozen_fname, TF_Graph ** p_graph)
 {
 	TF_Status* s = TF_NewStatus();
 
@@ -56,20 +56,10 @@ TF_Session * load_graph(const char * frozen_fname, TF_Graph ** p_graph)
 	{
 		printf("load graph failed!\n Error: %s\n",TF_Message(s));
 
-		return nullptr;
+		return;
 	}
 
-	TF_SessionOptions* sess_opts = TF_NewSessionOptions();
-	TF_Session* session = TF_NewSession(graph, sess_opts, s);
-	assert(TF_GetCode(s) == TF_OK);
-
-
-	TF_DeleteStatus(s);
-
-
 	*p_graph=graph;
-
-	return session;
 }
 
 void generate_bounding_box_tf(const float * confidence_data, int confidence_size,
@@ -460,14 +450,18 @@ void run_ONet(TF_Session * sess, TF_Graph * graph, cv::Mat& img, std::vector<fac
 }
 
 
-void mtcnn_detect(TF_Session * sess, TF_Graph * graph, cv::Mat& img, std::vector<face_box>& face_list)
+void mtcnn_detect(TF_Graph * graph, cv::Mat& img, std::vector<face_box>& face_list)
 {
 	cv::Mat working_img;
 
 	float alpha=0.0078125;
 	float mean=127.5;
 
-
+	TF_Status* s = TF_NewStatus();
+	TF_SessionOptions* sess_opts = TF_NewSessionOptions();
+	TF_Session* sess = TF_NewSession(graph, sess_opts, s);
+	assert(TF_GetCode(s) == TF_OK);
+	TF_DeleteStatus(s);
 
 	img.convertTo(working_img, CV_32FC3);
 
@@ -555,6 +549,10 @@ void mtcnn_detect(TF_Session * sess, TF_Graph * graph, cv::Mat& img, std::vector
 		}
 	}
 
+	s = TF_NewStatus();
+	TF_CloseSession(sess,s);
+	TF_DeleteSession(sess,s);
+	TF_DeleteStatus(s);
 }
 
 
