@@ -40,7 +40,7 @@ NullImplFRVT11::initialize(const std::string &configDir)
 //            "../model/det4.caffemodel"
     };
 	this->mtcnn = MTCNN(model_file, trained_file);
-	init( configDir+"/data" );
+	iSapInit( configDir+"/data" );
     return ReturnStatus(ReturnCode::Success);
 }
 
@@ -72,7 +72,7 @@ NullImplFRVT11::createTemplate(
 		//mtcnn_detect(this->graph, dframe, face_list);
 		cout<<"end detect: "<<i<<endl;
 
-		if (alignment.size()<1 || alignment[0].size()<1) {
+		if (rectangles.size()==0) {
 			continue;
 		}
 
@@ -83,15 +83,12 @@ NullImplFRVT11::createTemplate(
 		cout<<"eyes: "<<xl<<" "<<yl<<" "<<xr<<" "<<yr<<endl;
 		eyeCoordinates.push_back(EyePair(true, true, xl, yl, xr, yr));
 		if (ret.size()==0) {
-			// net
-			//matrix<rgb_pixel> face_chip;
-			//cv::Mat corp_img=dframe(cv::Range(box.y0,box.y1),cv::Range(box.x0,box.x1));
-			//dlib::assign_image(face_chip, cv_image<bgr_pixel>(corp_img));
-			//matrix<float,0,1> face_descriptor = net(face_chip);
-			//std::vector<float> a=std::vector<float>(face_descriptor.begin(), face_descriptor.end());
-			//unsigned int n=a.size()*sizeof(float);
-			//uint8_t* b = reinterpret_cast<uint8_t*>(a.data());
-			//ret=std::vector<uint8_t>(b, b+n);
+			std::vector<float> feature;
+			iSapGenerateFaceFeature(dframe, rectangles[0], feature);
+			std::vector<float> &a=feature;
+			unsigned int n=a.size()*sizeof(float);
+			uint8_t* b = reinterpret_cast<uint8_t*>(a.data());
+			ret=std::vector<uint8_t>(b, b+n);
 		}
 	}
 	templ.resize(ret.size());
@@ -104,6 +101,11 @@ NullImplFRVT11::createTemplate(
     return ReturnStatus(ReturnCode::Success);
 }
 
+void toFloatVector(const std::vector<uint8_t> &templData, std::vector<float> &feature) {
+	const float* floatArray = reinterpret_cast<const float*>(templData.data());
+	unsigned int count = templData.size()/sizeof(float);
+	feature = std::vector<float>(floatArray, floatArray+count);
+}
 
 ReturnStatus
 NullImplFRVT11::matchTemplates(
@@ -111,7 +113,17 @@ NullImplFRVT11::matchTemplates(
         const std::vector<uint8_t> &enrollTemplate,
         double &similarity)
 {
-    similarity = rand() % 1000 + 1;
+	if (verifTemplate.size()==0 || enrollTemplate.size()==0) {
+		similarity = 0;
+		return ReturnStatus(ReturnCode::Success);
+	}
+	std::vector<float> f1;
+	std::vector<float> f2;
+	toFloatVector(verifTemplate,f1);
+	toFloatVector(enrollTemplate,f2);
+	float score;
+	iSapCompareFaceFeature(f1,f2,score);
+	similarity = score;
     return ReturnStatus(ReturnCode::Success);
 }
 

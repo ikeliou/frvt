@@ -46,13 +46,21 @@ MTCNN::~MTCNN(){}
 
 void MTCNN::detection(const cv::Mat& img, std::vector<cv::Rect>& rectangles)
 {
+	std::cout<<"11"<<std::endl;
     Preprocess(img);
+	std::cout<<"11"<<std::endl;
     P_Net();
+	std::cout<<"11"<<std::endl;
     local_NMS();
-    R_Net();
+	std::cout<<"11"<<std::endl;
+    if (R_Net()!=0) return;
+	std::cout<<"11"<<std::endl;
     local_NMS();
-    O_Net();
+	std::cout<<"11"<<std::endl;
+    if (O_Net()!=0) return;
+	std::cout<<"11"<<std::endl;
     global_NMS();
+	std::cout<<"11"<<std::endl;
 
 
     rectangles.clear();
@@ -71,7 +79,9 @@ void MTCNN::detection(const cv::Mat& img, std::vector<cv::Rect>& rectangles, std
 
 void MTCNN::detection(const cv::Mat& img, std::vector<cv::Rect>& rectangles, std::vector<float>& confidence, std::vector<std::vector<cv::Point>>& alignment)
 {
+	std::cout<<"1"<<std::endl;
     detection(img, rectangles, confidence);
+	std::cout<<"2"<<std::endl;
 
     alignment.clear();
     for(auto &i : alignment_)
@@ -142,17 +152,17 @@ void MTCNN::P_Net()
     }
 }
 
-void MTCNN::R_Net()
+int MTCNN::R_Net()
 {
-    detect_net(1);
+    return detect_net(1);
 }
 
-void MTCNN::O_Net()
+int MTCNN::O_Net()
 {
-    detect_net(2);
+    return detect_net(2);
 }
 
-void MTCNN::detect_net(int i)
+int MTCNN::detect_net(int i)
 {
     float thresh = threshold_[i];
     std::vector<cv::Rect> bounding_box;
@@ -160,9 +170,11 @@ void MTCNN::detect_net(int i)
     std::vector<cv::Mat> cur_imgs;
     std::vector<std::vector<cv::Point>> alignment;
 
+	std::cout<<"22"<<std::endl;
     if(bounding_box_.size() == 0)
-        return;
+        return -1;
 
+	std::cout<<"22"<<std::endl;
     for (int j = 0; j < bounding_box_.size(); j++) {
         cv::Mat img = crop(img_, bounding_box_[j]);
         if (img.size() == cv::Size(0,0))
@@ -175,11 +187,17 @@ void MTCNN::detect_net(int i)
         cur_imgs.push_back(img);
     }
 
+	std::cout<<"22"<<std::endl;
 //    std::vector<cv::Mat> cur_imgs_test;
 //    cur_imgs_test.push_back(cur_imgs[0]);
 
+	std::cout<<"22"<<std::endl;
+	std::cout<<std::to_string(i)<<std::endl;
+	std::cout<<"cur_imgs:"<<std::to_string(cur_imgs.size())<<std::endl;
+	if (cur_imgs.size()==0) return -1;
     Predict(cur_imgs, i);
 
+	std::cout<<"22"<<std::endl;
     for(int j = 0; j < confidence_temp_.size()/2; j++)
     {
         float conf = confidence_temp_[2*j+1];
@@ -228,6 +246,7 @@ void MTCNN::detect_net(int i)
     bounding_box_ = bounding_box;
     confidence_ = confidence;
     alignment_ = alignment;
+	return 0;
 }
 
 
@@ -332,15 +351,18 @@ void MTCNN::global_NMS()
  */
 void MTCNN::Predict(const cv::Mat& img, int i)
 {
+	std::cout<<"33"<<std::endl;
     std::shared_ptr<Net> net = nets_[i];
 	std::vector<string> output_blob_names = output_blob_names_[i];
 	
+	std::cout<<"33"<<std::endl;
     Blob* input_layer = net->blob_by_name("data").get();
     input_layer->Reshape(1, num_channels_,
                          img.rows, img.cols);
     /* Forward dimension change to all layers. */
     net->Reshape();
 
+	std::cout<<"33"<<std::endl;
     std::vector<cv::Mat> input_channels;
     WrapInputLayer(img, &input_channels, i);
     net->Forward();
@@ -349,11 +371,13 @@ void MTCNN::Predict(const cv::Mat& img, int i)
     Blob* rect = net->blob_by_name(output_blob_names[0]).get();
     Blob* confidence = net->blob_by_name(output_blob_names[1]).get();
     int count = confidence->count() / 2;
+	std::cout<<"33"<<std::endl;
 
     const float* rect_begin = rect->cpu_data();
     const float* rect_end = rect_begin + rect->channels() * count;
     regression_box_temp_ = std::vector<float>(rect_begin, rect_end);
 
+	std::cout<<"33"<<std::endl;
     const float* confidence_begin = confidence->cpu_data() + count;
     const float* confidence_end = confidence_begin + count;
 

@@ -29,9 +29,9 @@ public:
 
     void Preprocess(const cv::Mat &img);
     void P_Net();
-    void R_Net();
-    void O_Net();
-    void detect_net(int i);
+    int R_Net();
+    int O_Net();
+    int detect_net(int i);
 
     void local_NMS();
     void global_NMS();
