@@ -7,6 +7,10 @@
  */
 
 #include "MTCNN.h"
+void print_vec(vector<float> vec) {
+	for (auto v:vec) std::cout<<v<<" "; std::cout<<std::endl;
+}
+
 MTCNN::MTCNN(){}
 
 MTCNN::MTCNN(const std::vector<std::string> model_file, const std::vector<std::string> trained_file)
@@ -46,6 +50,14 @@ MTCNN::~MTCNN(){}
 
 void MTCNN::detection(const cv::Mat& img, std::vector<cv::Rect>& rectangles)
 {
+	regression_box_temp_.clear();
+	bounding_box_.clear();
+	confidence_.clear();
+	confidence_temp_.clear();
+	alignment_.clear();
+	alignment_temp_.clear();
+	img_resized_.clear();
+
 	std::cout<<"11"<<std::endl;
     Preprocess(img);
 	std::cout<<"11"<<std::endl;
@@ -177,6 +189,9 @@ int MTCNN::detect_net(int i)
 	std::cout<<"22"<<std::endl;
     for (int j = 0; j < bounding_box_.size(); j++) {
         cv::Mat img = crop(img_, bounding_box_[j]);
+		std::cout<< img_.size() <<std::endl;
+		std::cout<< bounding_box_[j] <<std::endl;
+		std::cout<< img.size() <<std::endl;
         if (img.size() == cv::Size(0,0))
             continue;
         if (img.rows == 0 || img.cols == 0)
@@ -376,7 +391,6 @@ void MTCNN::Predict(const cv::Mat& img, int i)
     const float* rect_begin = rect->cpu_data();
     const float* rect_end = rect_begin + rect->channels() * count;
     regression_box_temp_ = std::vector<float>(rect_begin, rect_end);
-
 	std::cout<<"33"<<std::endl;
     const float* confidence_begin = confidence->cpu_data() + count;
     const float* confidence_end = confidence_begin + count;

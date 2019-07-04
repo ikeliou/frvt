@@ -44,6 +44,13 @@ NullImplFRVT11::initialize(const std::string &configDir)
     return ReturnStatus(ReturnCode::Success);
 }
 
+typedef struct Crop {
+	float conf;
+	EyePair eye;
+	cv::Rect rect;
+	cv::Mat *mat;
+} Crop;
+
 ReturnStatus
 NullImplFRVT11::createTemplate(
         const Multiface &faces,
@@ -52,7 +59,9 @@ NullImplFRVT11::createTemplate(
         std::vector<EyePair> &eyeCoordinates)
 {
 	cout<<"createTemplate"<<endl;
-	std::vector<uint8_t> ret;
+
+	std::vector<cv::Mat> mats(faces.size());
+	vector<Crop> crops;
 	for (unsigned int i=0; i<faces.size(); i++) {
 		cout<<"face"<<i<<endl;
 		auto &image=faces[i];
@@ -61,38 +70,63 @@ NullImplFRVT11::createTemplate(
 		cout<<(unsigned int)image.depth<<endl;
 		cout<<image.size()<<endl;
 		cv::Mat frame = cv::Mat(image.height,image.width,CV_8UC3,(unsigned char*)data);
-		cv::Mat dframe = cv::Mat(image.height,image.width,CV_8UC3);
-		cv::cvtColor(frame, dframe, CV_RGB2BGR);
-		//std::vector<face_box> face_list;
+		//mats.push_back(cv::Mat(image.height,image.width,CV_8UC3));
+		cv::cvtColor(frame, mats[i], CV_RGB2BGR);
+		
 		vector<cv::Rect> rectangles;
 		std::vector<float> confidence;
 		std::vector<std::vector<cv::Point>> alignment;
 		cout<<"start detect: "<<i<<endl;
-		this->mtcnn.detection(dframe, rectangles, confidence, alignment);
-		//mtcnn_detect(this->graph, dframe, face_list);
+		this->mtcnn.detection(mats[i], rectangles, confidence, alignment);
 		cout<<"end detect: "<<i<<endl;
 
-		if (rectangles.size()==0) {
-			continue;
-		}
-
-		unsigned int xl=alignment[0][0].x;
-		unsigned int yl=alignment[0][0].y;
-		unsigned int xr=alignment[0][1].x;
-		unsigned int yr=alignment[0][1].y;
-		cout<<"eyes: "<<xl<<" "<<yl<<" "<<xr<<" "<<yr<<endl;
-		eyeCoordinates.push_back(EyePair(true, true, xl, yl, xr, yr));
-		if (ret.size()==0) {
-			std::vector<float> feature;
-			iSapGenerateFaceFeature(dframe, rectangles[0], feature);
-			std::vector<float> &a=feature;
-			unsigned int n=a.size()*sizeof(float);
-			uint8_t* b = reinterpret_cast<uint8_t*>(a.data());
-			ret=std::vector<uint8_t>(b, b+n);
+		if (rectangles.size()!=0) {
+			cout<<"get crops"<<endl;
+			for (size_t i=0; i<confidence.size(); ++i) {
+				Crop crop;
+				crop.conf=confidence[i];
+				crop.rect=rectangles[i];
+				unsigned int xl=alignment[i][0].x;
+				unsigned int yl=alignment[i][0].y;
+				unsigned int xr=alignment[i][1].x;
+				unsigned int yr=alignment[i][1].y;
+				crop.eye=EyePair(true, true, xl, yl, xr, yr);
+				crop.mat=&mats.back();
+				crops.push_back(crop);
+				cout<<"eye: "<<xl<<" "<<yl<<" "<<xr<<" "<<yr<<endl;
+				
+			}
 		}
 	}
-	templ.resize(ret.size());
-    templ=ret;
+	cout<<"set eyes"<<endl;	
+	// set eyes
+	std::vector<float> feature;
+	if (crops.size()>0) {
+		Crop ret_crop=crops[0];
+		for (auto &crop:crops) {
+			if (crop.rect.area()>ret_crop.rect.area()) {
+//			if (crop.conf>ret_crop.conf) {
+				ret_crop=crop;
+			}
+		}
+		eyeCoordinates.push_back(ret_crop.eye);
+		iSapGenerateFaceFeature(*ret_crop.mat, ret_crop.rect, feature);
+	} else {
+		eyeCoordinates.push_back(EyePair(false, false, 0, 0, 0, 0));
+		auto size=mats[0].size();
+		iSapGenerateFaceFeature(mats[0], cv::Rect(0,0,size.width,size.height), feature);
+	}
+
+	cout<<"return feature"<<endl;	
+	// return feature
+	if (feature.size()>0) {
+		std::vector<float> &a=feature;
+		unsigned int n=a.size()*sizeof(float);
+		uint8_t* b = reinterpret_cast<uint8_t*>(a.data());
+		templ=std::vector<uint8_t>(b, b+n);
+	} else {
+		templ.resize(0);
+	}
 	cout<<"templ.size() "<<templ.size()<<endl;
 	if (templ.size()==0) {
 		return ReturnStatus(ReturnCode::TemplateCreationError);
@@ -115,7 +149,7 @@ NullImplFRVT11::matchTemplates(
 {
 	if (verifTemplate.size()==0 || enrollTemplate.size()==0) {
 		similarity = 0;
-		return ReturnStatus(ReturnCode::Success);
+		return ReturnStatus(ReturnCode::MatchError);
 	}
 	std::vector<float> f1;
 	std::vector<float> f2;
