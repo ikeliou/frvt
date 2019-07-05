@@ -72,7 +72,7 @@ public:
     //paramter for the threshold
     int minSize_ = 40;
     float factor_ = 0.709;
-    float threshold_[3] = {0.5, 0.5, 0.1};
+    float threshold_[3] = {0.5, 0.01, 0.01};
     float threshold_NMS_ = 0.5;
 	std::vector<std::vector<string> > output_blob_names_ = {{"conv4-2", "prob1"}, 
 															{"conv5-2", "prob1"},

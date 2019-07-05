@@ -104,8 +104,8 @@ NullImplFRVT11::createTemplate(
 	if (crops.size()>0) {
 		Crop ret_crop=crops[0];
 		for (auto &crop:crops) {
-			if (crop.rect.area()>ret_crop.rect.area()) {
-//			if (crop.conf>ret_crop.conf) {
+			//if (crop.rect.area()>ret_crop.rect.area()) {
+			if (crop.conf>ret_crop.conf) {
 				ret_crop=crop;
 			}
 		}
