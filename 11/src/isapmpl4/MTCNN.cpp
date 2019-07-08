@@ -55,6 +55,7 @@ void MTCNN::detection(const cv::Mat& img, std::vector<cv::Rect>& rectangles)
 	confidence_.clear();
 	confidence_temp_.clear();
 	alignment_.clear();
+	confidence_rnet_.clear();
 	alignment_temp_.clear();
 	img_resized_.clear();
 
@@ -71,8 +72,8 @@ void MTCNN::detection(const cv::Mat& img, std::vector<cv::Rect>& rectangles)
 	std::cout<<"11"<<std::endl;
     if (O_Net()!=0) return;
 	std::cout<<"11"<<std::endl;
-    global_NMS();
-	std::cout<<"11"<<std::endl;
+    //global_NMS();
+	//std::cout<<"11"<<std::endl;
 
 
     rectangles.clear();
@@ -86,7 +87,8 @@ void MTCNN::detection(const cv::Mat& img, std::vector<cv::Rect>& rectangles, std
 {
     detection(img, rectangles);
 
-    confidence = confidence_;
+    //confidence = confidence_;
+	confidence = confidence_rnet_;
 }
 
 void MTCNN::detection(const cv::Mat& img, std::vector<cv::Rect>& rectangles, std::vector<float>& confidence, std::vector<std::vector<cv::Point>>& alignment)
@@ -106,6 +108,12 @@ void MTCNN::detection(const cv::Mat& img, std::vector<cv::Rect>& rectangles, std
         alignment.push_back(std::move(temp_alignment));
     }
 
+}
+
+void MTCNN::detection(const cv::Mat& img, std::vector<cv::Rect>& rectangles, std::vector<float>& confidence, std::vector<std::vector<cv::Point>>& alignment, std::vector<float>& confidence_rnet)
+{
+	detection(img, rectangles, confidence, alignment);
+	confidence_rnet = confidence_rnet_;
 }
 
 void MTCNN::detection_TEST(const cv::Mat& img, std::vector<cv::Rect>& rectangles)
@@ -179,6 +187,7 @@ int MTCNN::detect_net(int i)
     float thresh = threshold_[i];
     std::vector<cv::Rect> bounding_box;
     std::vector<float> confidence;
+    std::vector<float> old_conf;
     std::vector<cv::Mat> cur_imgs;
     std::vector<std::vector<cv::Point>> alignment;
 
@@ -200,8 +209,10 @@ int MTCNN::detect_net(int i)
             cv::resize(img, img, input_geometry_[i]);
         img.convertTo(img, CV_32FC3, 0.0078125,-127.5*0.0078125);
         cur_imgs.push_back(img);
+		old_conf.push_back(confidence_[j]);
     }
 
+	std::cout<<"old_conf size: "<< old_conf.size() <<std::endl;
 	std::cout<<"22"<<std::endl;
 //    std::vector<cv::Mat> cur_imgs_test;
 //    cur_imgs_test.push_back(cur_imgs[0]);
@@ -248,6 +259,8 @@ int MTCNN::detect_net(int i)
                     align[k].y = bounding_box_[j].y + bounding_box_[j].height * alignment_temp_[10*j+k] - 1;
                 }
                 alignment.push_back(align);
+				std::cout<<"j: "<< j <<std::endl;
+				confidence_rnet_.push_back(old_conf[j]);
             }
 
             confidence.push_back(conf);

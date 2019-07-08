@@ -25,6 +25,7 @@ public:
     void detection(const cv::Mat& img, std::vector<cv::Rect>& rectangles);
     void detection(const cv::Mat& img, std::vector<cv::Rect>& rectangles, std::vector<float>& confidence);
     void detection(const cv::Mat& img, std::vector<cv::Rect>& rectangles, std::vector<float>& confidence, std::vector<std::vector<cv::Point>>& alignment);
+    void detection(const cv::Mat& img, std::vector<cv::Rect>& rectangles, std::vector<float>& confidence, std::vector<std::vector<cv::Point>>& alignment, std::vector<float>& confidence_rnet);
     void detection_TEST(const cv::Mat& img, std::vector<cv::Rect>& rectangles);
 
     void Preprocess(const cv::Mat &img);
@@ -66,13 +67,14 @@ public:
     std::vector<float> regression_box_temp_;
     std::vector<cv::Rect> bounding_box_;
     std::vector<float> confidence_;
+	std::vector<float> confidence_rnet_;
     std::vector<float> confidence_temp_;
     std::vector<std::vector<cv::Point>> alignment_;
     std::vector<float> alignment_temp_;
     //paramter for the threshold
     int minSize_ = 40;
     float factor_ = 0.709;
-    float threshold_[3] = {0.5, 0.01, 0.01};
+    float threshold_[3] = {0.2, 0.2, 0.0};
     float threshold_NMS_ = 0.5;
 	std::vector<std::vector<string> > output_blob_names_ = {{"conv4-2", "prob1"}, 
 															{"conv5-2", "prob1"},

@@ -10,7 +10,6 @@
 
 #include <cstring>
 #include <cstdlib>
-
 #include "nullimplfrvt11.h"
 
 #include "sdk/libFaceRecognition.h"
@@ -82,6 +81,7 @@ NullImplFRVT11::createTemplate(
 
 		if (rectangles.size()!=0) {
 			cout<<"get crops"<<endl;
+			cout<< confidence.size() << rectangles.size() << alignment.size() <<endl;
 			for (size_t i=0; i<confidence.size(); ++i) {
 				Crop crop;
 				crop.conf=confidence[i];
@@ -103,18 +103,45 @@ NullImplFRVT11::createTemplate(
 	std::vector<float> feature;
 	if (crops.size()>0) {
 		Crop ret_crop=crops[0];
-		for (auto &crop:crops) {
-			//if (crop.rect.area()>ret_crop.rect.area()) {
+		for (auto crop:crops) {
+			cout<<"area: "<< crop.rect.area() <<endl;
+			cout<<"conf: "<< crop.conf <<endl;
+#if 1
+			if (ret_crop.rect == (crop.rect&ret_crop.rect)) {
+				ret_crop=crop;
+			} else {
+				float diff=fabs(ret_crop.conf - crop.conf);
+				cout<< "diff:" << diff <<endl;
+				if (fabs(ret_crop.conf - crop.conf)<=0.05) {
+					if (crop.rect.area()>ret_crop.rect.area()) {
+						ret_crop=crop;
+					}
+				} else {
+					if (crop.conf>ret_crop.conf) {
+						ret_crop=crop;
+					}
+				}
+			}
+#else
 			if (crop.conf>ret_crop.conf) {
 				ret_crop=crop;
 			}
+#endif
 		}
+		cout<<"ret_crop: "<< ret_crop.rect <<endl;
+		cout<<"ret_crop conf: "<< ret_crop.conf <<endl;
 		eyeCoordinates.push_back(ret_crop.eye);
 		iSapGenerateFaceFeature(*ret_crop.mat, ret_crop.rect, feature);
+#ifdef debug
+		eyeCoordinates.push_back(EyePair(false, false, ret_crop.rect.x, ret_crop.rect.y, ret_crop.rect.width, ret_crop.rect.height));
+#endif
 	} else {
 		eyeCoordinates.push_back(EyePair(false, false, 0, 0, 0, 0));
 		auto size=mats[0].size();
 		iSapGenerateFaceFeature(mats[0], cv::Rect(0,0,size.width,size.height), feature);
+#ifdef debug
+		eyeCoordinates.push_back(EyePair(false, false, 0, 0, size.width, size.height));
+#endif
 	}
 
 	cout<<"return feature"<<endl;	
