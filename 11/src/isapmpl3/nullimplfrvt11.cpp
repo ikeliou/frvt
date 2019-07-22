@@ -17,7 +17,7 @@
 #include "mtcnn.hpp"
 #include "comm_lib.hpp"
 #include "utils.hpp"
-//#include "sdk/libFaceRecognition.h"
+#include "sdk/libFaceRecognition.h"
 
 using namespace std;
 using namespace FRVT;
@@ -33,7 +33,7 @@ NullImplFRVT11::initialize(const std::string &configDir)
 	string model_fname = configDir+"/mtcnn_frozen_model.pb";
 	cout<<endl<<"modelpath: "<<model_fname<<endl;
 	load_graph(model_fname.c_str(),&(this->graph));
-	//init( "./config/data" );
+	init( "./config/data" );
     return ReturnStatus(ReturnCode::Success);
 }
 

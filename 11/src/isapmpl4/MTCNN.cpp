@@ -64,15 +64,16 @@ void MTCNN::detection(const cv::Mat& img, std::vector<cv::Rect>& rectangles)
 	std::cout<<"11"<<std::endl;
     P_Net();
 	std::cout<<"11"<<std::endl;
-    local_NMS();
+    //local_NMS();
 	std::cout<<"11"<<std::endl;
     if (R_Net()!=0) return;
 	std::cout<<"11"<<std::endl;
-    local_NMS();
+    //local_NMS();
 	std::cout<<"11"<<std::endl;
     if (O_Net()!=0) return;
 	std::cout<<"11"<<std::endl;
-    //global_NMS();
+	std::cout<<"11"<<std::endl;
+    global_NMS();
 	//std::cout<<"11"<<std::endl;
 
 
@@ -87,8 +88,7 @@ void MTCNN::detection(const cv::Mat& img, std::vector<cv::Rect>& rectangles, std
 {
     detection(img, rectangles);
 
-    //confidence = confidence_;
-	confidence = confidence_rnet_;
+    confidence = confidence_;
 }
 
 void MTCNN::detection(const cv::Mat& img, std::vector<cv::Rect>& rectangles, std::vector<float>& confidence, std::vector<std::vector<cv::Point>>& alignment)
@@ -224,6 +224,15 @@ int MTCNN::detect_net(int i)
     Predict(cur_imgs, i);
 
 	std::cout<<"22"<<std::endl;
+	vector<float> confs;
+	for(int j = 0; j < confidence_temp_.size()/2; j++) {
+		float conf = confidence_temp_[2*j+1];
+		confs.push_back(conf);
+	}
+	std::sort(confs.begin(), confs.end());
+	if (confs.back()<=thresh) {
+		thresh=0.;
+	}
     for(int j = 0; j < confidence_temp_.size()/2; j++)
     {
         float conf = confidence_temp_[2*j+1];

@@ -44,11 +44,27 @@ NullImplFRVT11::initialize(const std::string &configDir)
 }
 
 typedef struct Crop {
-	float conf;
+	float conf_rnet;
+	float conf_onet;
 	EyePair eye;
 	cv::Rect rect;
 	cv::Mat *mat;
 } Crop;
+
+static bool crop_onet_compare(const Crop &a, const Crop &b)
+{
+	return (a.conf_onet > b.conf_onet);
+}
+
+static bool crop_rnet_compare(const Crop &a, const Crop &b)
+{
+	return (a.conf_rnet > b.conf_rnet);
+}
+
+static bool crop_all_compare(const Crop &a, const Crop &b)
+{
+	return (a.conf_onet+a.conf_rnet > b.conf_onet+b.conf_rnet);
+}
 
 ReturnStatus
 NullImplFRVT11::createTemplate(
@@ -68,24 +84,37 @@ NullImplFRVT11::createTemplate(
 		cout<<image.height<<" "<<image.width<<endl;
 		cout<<(unsigned int)image.depth<<endl;
 		cout<<image.size()<<endl;
-		cv::Mat frame = cv::Mat(image.height,image.width,CV_8UC3,(unsigned char*)data);
-		//mats.push_back(cv::Mat(image.height,image.width,CV_8UC3));
-		cv::cvtColor(frame, mats[i], CV_RGB2BGR);
-		
+		if (image.depth == 24) {
+			cv::Mat frame = cv::Mat(image.height,image.width,CV_8UC3,(unsigned char*)data);
+			cv::cvtColor(frame, mats[i], CV_RGB2BGR);
+		} else {
+			cv::Mat frame = cv::Mat(image.height,image.width,CV_8UC1,(unsigned char*)data);
+			cv::cvtColor(frame, mats[i], cv::COLOR_GRAY2BGR);
+		}
 		vector<cv::Rect> rectangles;
-		std::vector<float> confidence;
+		std::vector<float> confidence_onet;
+		//std::vector<float> confidence_rnet;
 		std::vector<std::vector<cv::Point>> alignment;
 		cout<<"start detect: "<<i<<endl;
-		this->mtcnn.detection(mats[i], rectangles, confidence, alignment);
+		//cv::Mat img=cv::imread("/root/frvt2019/common/images/8bit.pgm");
+		//this->mtcnn.detection(img, rectangles, confidence_onet, alignment);
+		this->mtcnn.detection(mats[i], rectangles, confidence_onet, alignment);
 		cout<<"end detect: "<<i<<endl;
 
 		if (rectangles.size()!=0) {
 			cout<<"get crops"<<endl;
-			cout<< confidence.size() << rectangles.size() << alignment.size() <<endl;
-			for (size_t i=0; i<confidence.size(); ++i) {
+			//cout<< confidence_rnet.size() << rectangles.size() << alignment.size() <<endl;
+			for (size_t i=0; i<rectangles.size(); ++i) {
 				Crop crop;
-				crop.conf=confidence[i];
+				crop.conf_onet=confidence_onet[i];
+				//crop.conf_rnet=confidence_rnet[i];
 				crop.rect=rectangles[i];
+				if (crop.rect.x<0) {
+					crop.rect.x=0;
+				}
+				if (crop.rect.y<0) {
+					crop.rect.y=0;
+				}
 				unsigned int xl=alignment[i][0].x;
 				unsigned int yl=alignment[i][0].y;
 				unsigned int xr=alignment[i][1].x;
@@ -98,39 +127,92 @@ NullImplFRVT11::createTemplate(
 			}
 		}
 	}
-	cout<<"set eyes"<<endl;	
+	cout<<"set eyes"<<endl;
+	// filter
+	/*
+	float threshold=0.3;
+	vector<Crop> crops_f;
+	while (threshold>0) {
+		for (auto crop:crops) {
+			if (crop.conf_rnet>=threshold)
+				crops_f.push_back(crop);
+		}
+		if (crops_f.size()!=0) {
+			crops=crops_f;
+			break;
+		}
+		threshold-=0.1;
+	}
+	*/
 	// set eyes
 	std::vector<float> feature;
 	if (crops.size()>0) {
+		std::sort(crops.begin(), crops.end(), crop_onet_compare);
 		Crop ret_crop=crops[0];
 		for (auto crop:crops) {
+			float diff=fabs(ret_crop.conf_onet - crop.conf_onet);
+			cout<<"diff:" << diff <<endl;
 			cout<<"area: "<< crop.rect.area() <<endl;
-			cout<<"conf: "<< crop.conf <<endl;
-#if 1
+			cout<<"conf_onet: "<< crop.conf_onet <<endl;
+			/*
+			if (ret_crop.conf_onet<=0.8 && crop.conf_onet>=0.9) {
+				ret_crop = crop;
+				continue;
+			}
+			*/
+			if (diff>0.05) break;
+			float eye_diff = fabs(crop.eye.xleft-ret_crop.eye.xright)+fabs(crop.eye.yright-ret_crop.eye.yright);
+			//if (eye_diff>1000. && crop.rect.area()>ret_crop.rect.area()) {
+			//if (this->mtcnn.IoU(crop.rect, ret_crop.rect) > 0.9&& crop.rect.area()>ret_crop.rect.area()) {
+			if (crop.rect.area()>ret_crop.rect.area()) {
+				ret_crop=crop;
+			}
+			//else if (eye_diff>1000. && ret_crop.rect == (ret_crop.rect&crop.rect)) {
+			//	ret_crop=crop;
+			//}
+
+			/*
 			if (ret_crop.rect == (crop.rect&ret_crop.rect)) {
+				if (ret_crop.conf_onet>crop.conf_onet && ret_crop.conf_onet>=0.8)
+					continue;
 				ret_crop=crop;
 			} else {
-				float diff=fabs(ret_crop.conf - crop.conf);
-				cout<< "diff:" << diff <<endl;
-				if (fabs(ret_crop.conf - crop.conf)<=0.05) {
+				if (diff<=0.05) {
 					if (crop.rect.area()>ret_crop.rect.area()) {
 						ret_crop=crop;
 					}
 				} else {
-					if (crop.conf>ret_crop.conf) {
+					if (crop.conf_rnet>ret_crop.conf_rnet) {
 						ret_crop=crop;
 					}
 				}
 			}
-#else
-			if (crop.conf>ret_crop.conf) {
-				ret_crop=crop;
-			}
-#endif
+			*/
 		}
 		cout<<"ret_crop: "<< ret_crop.rect <<endl;
-		cout<<"ret_crop conf: "<< ret_crop.conf <<endl;
-		eyeCoordinates.push_back(ret_crop.eye);
+		cout<<"ret_crop conf_onet: "<< ret_crop.conf_onet <<endl;
+		//cout<<"ret_crop conf_rnet: "<< ret_crop.conf_rnet <<endl;
+#if 0
+		std::sort(crops.begin(), crops.end(), crop_onet_compare);
+		Crop eye_crop=crops[0];
+		for (auto crop:crops) {
+			float diff=fabs(eye_crop.conf_onet - crop.conf_onet);
+			cout<< "diff:" << diff <<endl;
+			cout<< "area:"<< crop.rect.area() <<endl;
+			cout<< "conf_onet:"<< crop.conf_onet <<endl;
+			if (diff>0.001) {
+				break;
+			}
+			if (crop.rect.area()>eye_crop.rect.area()) {
+				eye_crop=crop;
+			}
+		}
+		cout<<"eye_crop: "<< eye_crop.rect <<endl;
+		cout<<"eye_crop conf_onet: "<< eye_crop.conf_onet <<endl;
+		cout<<"eye_crop conf_rnet: "<< eye_crop.conf_rnet <<endl;
+#endif
+		Crop eye_crop=ret_crop;
+		eyeCoordinates.push_back(eye_crop.eye);
 		iSapGenerateFaceFeature(*ret_crop.mat, ret_crop.rect, feature);
 #ifdef debug
 		eyeCoordinates.push_back(EyePair(false, false, ret_crop.rect.x, ret_crop.rect.y, ret_crop.rect.width, ret_crop.rect.height));
