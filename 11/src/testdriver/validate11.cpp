@@ -15,7 +15,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <csignal>
-
+#include <chrono>
 
 #include "frvt11.h"
 #include "util.h"
@@ -68,11 +68,16 @@ createTemplate(
     }
 
     /* header */
+#ifdef debug
+    logStream << "id image templateSizeBytes returnCode isLeftEyeAssigned "
+            "isRightEyeAssigned xleft yleft xright yright x y width height quality" << endl;
+#else
     logStream << "id image templateSizeBytes returnCode isLeftEyeAssigned "
             "isRightEyeAssigned xleft yleft xright yright quality" << endl;
-
+#endif
     string id, imagePath, desc;
     while (inputStream >> id >> imagePath >> desc) {
+		cout<<imagePath<<endl;
         Image image;
         if (!readImage(imagePath, image)) {
             cerr << "[ERROR] Failed to load image file: " << imagePath << "." << endl;
@@ -83,8 +88,9 @@ createTemplate(
         Multiface faces{image};
         vector<uint8_t> templ;
         vector<EyePair> eyes;
+		//auto begin = chrono::high_resolution_clock::now();
         auto ret = implPtr->createTemplate(faces, role, templ, eyes);
-
+		//auto end = chrono::high_resolution_clock::now();
         /* Open template file for writing */
         string templFile{id + ".template"};
         ofstream templStream(templatesDir + "/" + templFile);
@@ -107,6 +113,13 @@ createTemplate(
                 << (eyes.size() > 0 ? eyes[0].yleft : 0) << " "
                 << (eyes.size() > 0 ? eyes[0].xright : 0) << " "
                 << (eyes.size() > 0 ? eyes[0].yright : 0)
+#ifdef debug
+				<< " " 
+				<< (eyes.size() > 1 ? eyes[1].xleft : 0) << " "
+				<< (eyes.size() > 1 ? eyes[1].yleft : 0) << " "
+				<< (eyes.size() > 1 ? eyes[1].xright : 0) << " "
+				<< (eyes.size() > 1 ? eyes[1].yright : 0)
+#endif
                 << endl;
     }
     inputStream.close();
@@ -296,6 +309,8 @@ main(
 
     bool parent = false;
 	int i = 0;
+	cout << "test" << endl;
+	cout << inputFileVector.size() << endl;
     for (auto &inputFile : inputFileVector) {
 		/* Fork */
 		switch(fork()) {
@@ -324,6 +339,7 @@ main(
 	}
 
 
+	cout << parent << endl;
     /* Parent -- wait for children */
     if (parent) {
         while (numForks > 0) {
