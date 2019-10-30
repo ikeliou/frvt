@@ -27,7 +27,7 @@ NullImplFRVT11::initialize(const std::string &configDir)
 	//cout<< "configDir " << configDir << endl;
 	this->configDir = configDir;
    	this->h = kenxnet_init( this->configDir+"/models" );
-	//cout<< this->h << endl;
+	//cout<< this-> h << endl;
     return ReturnStatus(ReturnCode::Success);
 }
 
@@ -67,23 +67,38 @@ NullImplFRVT11::createTemplate(
 			cv::Mat frame = cv::Mat(image.height,image.width,CV_8UC1,(unsigned char*)data);
 			cv::cvtColor(frame, mats[i], cv::COLOR_GRAY2BGR);
 		}
-		std::vector<face_box> face_list;
+		//std::vector<face_box> face_list;
 		//cout<< this->h <<endl;
-		if (kenxnet_detectFace(this->h, mats[i], face_list)) {
+		
+		cv::Mat &img=mats[i];
+		const int max_side = 320;
+        float long_side = std::max(img.cols, img.rows);
+        float scale = max_side/long_side;
+        cv::Mat img_scale;
+        cv::Size size = cv::Size(img.cols*scale, img.rows*scale);
+        cv::resize(img, img_scale, cv::Size(img.cols*scale, img.rows*scale));
+        std::vector<bbox> boxes;
+		cout<< "start detecting" << endl;
+    	this->detector.Init( this->configDir+"/model/face.param", this->configDir+"/model/face.bin" );
+        this->detector.Detect(img_scale, boxes);
+		cout<< "end detecting" << endl;
+
+		//if (kenxnet_detectFace(this->h, mats[i], face_list)) {
 			//cout<< "kenxnet_detectFace" << endl;
-		}
-		if (face_list.size()!=0) {
+		//}
+		if (boxes.size()!=0) {
 			//cout<<"get crops"<<endl;
 			//cout<< confidence_rnet.size() << rectangles.size() << alignment.size() <<endl;
 			Crop eye_crop;
 			eye_crop.rect=cv::Rect(0,0,0,0);
 			eye_crop.eye=EyePair(false, false, 0, 0, 0, 0);
-			for (size_t j=0; j<face_list.size(); ++j) {
-				struct face_box box = face_list[j];
+			for (size_t j=0; j<boxes.size(); ++j) {
+				struct bbox box = boxes[j];
+            	cv::Rect rect(box.x1/scale, box.y1/scale, box.x2/scale - box.x1/scale, box.y2/scale - box.y1/scale);
 				//cout << box.landmark.x[0] << " " << box.landmark.y[0] << endl;
 				//cout << (int)box.x0 << " " << (int)box.y0 << endl;
 				Crop crop;
-				crop.rect=cv::Rect( (int)box.x0, (int)box.y0, int( box.x1-box.x0 ), int( box.y1-box.y0) );
+				crop.rect=rect;
 				//cout << "crop:" << crop.rect <<endl;
 				if (crop.rect.x<0) {
 					crop.rect.x=0;
@@ -101,10 +116,10 @@ NullImplFRVT11::createTemplate(
 				}
 				//cout << crop.rect << endl;
 
-				unsigned int xl=box.landmark.x[0];
-				unsigned int yl=box.landmark.y[0];
-				unsigned int xr=box.landmark.x[1];
-				unsigned int yr=box.landmark.y[1];
+				unsigned int xl=box.point[0]._x/scale;
+				unsigned int yl=box.point[0]._y/scale;
+				unsigned int xr=box.point[1]._x/scale;
+				unsigned int yr=box.point[1]._y/scale;
 				crop.eye=EyePair(true, true, xl, yl, xr, yr);
 #ifdef debug
 				crop.eye.x=crop.rect.x;
@@ -143,20 +158,10 @@ NullImplFRVT11::createTemplate(
 		face_mat=mat;
 #endif
 		kenxnet_genFaceFeature(this->h, mat, feature);
-/*
-#ifdef debug
-		eyeCoordinates.push_back(EyePair(false, false, ret_crop.rect.x, ret_crop.rect.y, ret_crop.rect.width, ret_crop.rect.height));
-#endif
-*/
 	} else {
 		//eyeCoordinates.push_back(EyePair(false, false, 0, 0, 0, 0));
 		auto size=mats[0].size();
 		kenxnet_genFaceFeature(this->h, mats[0], feature);
-/*
-#ifdef debug
-		eyeCoordinates.push_back(EyePair(false, false, 0, 0, size.width, size.height));
-#endif
-*/
 	}
 	//cout<<"return feature"<<endl;	
 	// return feature
