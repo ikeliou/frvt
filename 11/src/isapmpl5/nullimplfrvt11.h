@@ -31,6 +31,9 @@ public:
             const FRVT::Multiface &faces,
             FRVT::TemplateRole role,
             std::vector<uint8_t> &templ,
+#ifdef debug
+			cv::Mat &face_mat,
+#endif
             std::vector<FRVT::EyePair> &eyeCoordinates) override;
 
     FRVT::ReturnStatus

@@ -44,6 +44,9 @@ NullImplFRVT11::createTemplate(
         const Multiface &faces,
         TemplateRole role,
         std::vector<uint8_t> &templ,
+#ifdef debug
+		cv::Mat &face_mat,
+#endif
         std::vector<EyePair> &eyeCoordinates)
 {
 	//cout<<"createTemplate"<<endl;
@@ -103,6 +106,12 @@ NullImplFRVT11::createTemplate(
 				unsigned int xr=box.landmark.x[1];
 				unsigned int yr=box.landmark.y[1];
 				crop.eye=EyePair(true, true, xl, yl, xr, yr);
+#ifdef debug
+				crop.eye.x=crop.rect.x;
+				crop.eye.y=crop.rect.y;
+				crop.eye.w=crop.rect.width;
+				crop.eye.h=crop.rect.height;
+#endif
 				crop.mat=&mats[i];
 				crops.push_back(crop);
 				if (crop.rect.area()>eye_crop.rect.area()) {
@@ -130,17 +139,24 @@ NullImplFRVT11::createTemplate(
 		//cout<< "mat w: " << ret_crop.mat->size().width << endl;
 		//cout<< "mat h: " << ret_crop.mat->size().height << endl;
 		cv::Mat mat = ret_crop.mat->operator()(ret_crop.rect);
+#ifdef debug
+		face_mat=mat;
+#endif
 		kenxnet_genFaceFeature(this->h, mat, feature);
+/*
 #ifdef debug
 		eyeCoordinates.push_back(EyePair(false, false, ret_crop.rect.x, ret_crop.rect.y, ret_crop.rect.width, ret_crop.rect.height));
 #endif
+*/
 	} else {
-		eyeCoordinates.push_back(EyePair(false, false, 0, 0, 0, 0));
+		//eyeCoordinates.push_back(EyePair(false, false, 0, 0, 0, 0));
 		auto size=mats[0].size();
 		kenxnet_genFaceFeature(this->h, mats[0], feature);
+/*
 #ifdef debug
 		eyeCoordinates.push_back(EyePair(false, false, 0, 0, size.width, size.height));
 #endif
+*/
 	}
 	//cout<<"return feature"<<endl;	
 	// return feature
@@ -172,6 +188,7 @@ NullImplFRVT11::matchTemplates(
         const std::vector<uint8_t> &enrollTemplate,
         double &similarity)
 {
+	cout << verifTemplate.size() << " " << enrollTemplate.size() << endl;
 	if (verifTemplate.size()==0 || enrollTemplate.size()==0) {
 		similarity = 0;
 		return ReturnStatus(ReturnCode::MatchError);
@@ -181,6 +198,7 @@ NullImplFRVT11::matchTemplates(
 	toFloatVector(verifTemplate,f1);
 	toFloatVector(enrollTemplate,f2);
 	similarity = kenxnet_faceFeatureCompare(this->h, (float*)&f1[0], f1.size(), (float*)&f2[0], f2.size());
+	cout << similarity << endl;
     return ReturnStatus(ReturnCode::Success);
 }
 
