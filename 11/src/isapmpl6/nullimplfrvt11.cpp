@@ -23,17 +23,17 @@ NullImplFRVT11::~NullImplFRVT11() {}
 ReturnStatus
 NullImplFRVT11::initialize(const std::string &configDir)
 {
-	//cout<< "initialize" <<endl;
+	cout<< "initialize" <<endl;
 	//cout<< "configDir " << configDir << endl;
 	this->configDir = configDir;
    	this->h = kenxnet_init( this->configDir+"/models" );
+    this->detector.Init( this->configDir+"/model/face.param", this->configDir+"/model/face.bin" );
 	//cout<< this-> h << endl;
     return ReturnStatus(ReturnCode::Success);
 }
 
 typedef struct Crop {
-	float conf_rnet;
-	float conf_onet;
+	float conf;
 	EyePair eye;
 	cv::Rect rect;
 	cv::Mat *mat;
@@ -53,6 +53,7 @@ NullImplFRVT11::createTemplate(
 	//cout<<"configDir: "<<this->configDir<<endl;
 	std::vector<cv::Mat> mats(faces.size());
 	vector<Crop> crops;
+    //this->detector.Init( this->configDir+"/model/face.param", this->configDir+"/model/face.bin" );
 	for (unsigned int i=0; i<faces.size(); i++) {
 		//cout<<"face"<<i<<endl;
 		auto &image=faces[i];
@@ -79,7 +80,6 @@ NullImplFRVT11::createTemplate(
         cv::resize(img, img_scale, cv::Size(img.cols*scale, img.rows*scale));
         std::vector<bbox> boxes;
 		cout<< "start detecting" << endl;
-    	this->detector.Init( this->configDir+"/model/face.param", this->configDir+"/model/face.bin" );
         this->detector.Detect(img_scale, boxes);
 		cout<< "end detecting" << endl;
 
@@ -99,6 +99,7 @@ NullImplFRVT11::createTemplate(
 				//cout << (int)box.x0 << " " << (int)box.y0 << endl;
 				Crop crop;
 				crop.rect=rect;
+				crop.conf=box.s;
 				//cout << "crop:" << crop.rect <<endl;
 				if (crop.rect.x<0) {
 					crop.rect.x=0;
@@ -126,15 +127,17 @@ NullImplFRVT11::createTemplate(
 				crop.eye.y=crop.rect.y;
 				crop.eye.w=crop.rect.width;
 				crop.eye.h=crop.rect.height;
+				crop.eye.conf=crop.conf;
 #endif
 				crop.mat=&mats[i];
-				crops.push_back(crop);
+				//crops.push_back(crop);
 				if (crop.rect.area()>eye_crop.rect.area()) {
 					eye_crop = crop;
 				}
 				//cout<<"eye: "<<xl<<" "<<yl<<" "<<xr<<" "<<yr<<endl;
 			}
 			eyeCoordinates.push_back(eye_crop.eye);
+			crops.push_back(eye_crop);
 		} else {
 			eyeCoordinates.push_back(EyePair(false, false, 0, 0, 0, 0));
 		}
@@ -145,7 +148,7 @@ NullImplFRVT11::createTemplate(
 	if (crops.size()>0) {
 		Crop ret_crop=crops[0];
 		for (auto crop:crops) {
-			if (crop.rect.area()>ret_crop.rect.area()) {
+			if (crop.conf>ret_crop.conf) {
 				ret_crop=crop;
 			}
 		}
