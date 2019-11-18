@@ -13,8 +13,7 @@
 
 #include "frvt11.h"
 #include "kenxnetinterface.h"
-//#include "FaceDetector.h"
-#include "retinaface_api.h"
+#include "FaceDetector.h"
 /*
  * Declare the implementation class of the FRVT 1:1 Interface
  */
