@@ -37,6 +37,7 @@ typedef struct Crop {
 	EyePair eye;
 	cv::Rect rect;
 	cv::Mat *mat;
+    std::vector<cv::Point2f> pts;
 } Crop;
 
 ReturnStatus
@@ -72,7 +73,7 @@ NullImplFRVT11::createTemplate(
 		//cout<< this->h <<endl;
 		
 		cv::Mat &img=mats[i];
-        std::vector<Anchor> boxes;
+        std::vector<facebox> boxes;
 		cout<< "start detecting" << endl;
         detect(img, boxes);
 		cout<< "end detecting" << endl;
@@ -87,15 +88,17 @@ NullImplFRVT11::createTemplate(
 			eye_crop.rect=cv::Rect(0,0,0,0);
 			eye_crop.eye=EyePair(false, false, 0, 0, 0, 0);
 			for (size_t j=0; j<boxes.size(); ++j) {
-				auto box = boxes[j].finalbox;
-				auto pts = boxes[j].pts;
+				auto box = boxes[j].rect;
+				auto pts = boxes[j].keypoints;
             	cv::Rect rect(box.x, box.y, box.width, box.height);
 				//cout << box.landmark.x[0] << " " << box.landmark.y[0] << endl;
 				//cout << (int)box.x0 << " " << (int)box.y0 << endl;
+
 				Crop crop;
-				crop.rect=rect;
+				crop.rect=fit_rect(mats[i], rect);
 				crop.conf=boxes[j].score;
 				//cout << "crop:" << crop.rect <<endl;
+                /*
 				if (crop.rect.x<0) {
 					crop.rect.x=0;
 				}
@@ -110,12 +113,14 @@ NullImplFRVT11::createTemplate(
 				if (crop.rect.y + crop.rect.height > size.height) {
 					crop.rect.height=size.height-crop.rect.y;
 				}
+                */
 				//cout << crop.rect << endl;
 
 				unsigned int xl=pts[0].x;
 				unsigned int yl=pts[0].y;
 				unsigned int xr=pts[1].x;
 				unsigned int yr=pts[1].y;
+                crop.pts=pts;
 				crop.eye=EyePair(true, true, xl, yl, xr, yr);
 #ifdef debug
 				crop.eye.x=crop.rect.x;
@@ -143,21 +148,40 @@ NullImplFRVT11::createTemplate(
 	if (crops.size()>0) {
 		Crop ret_crop=crops[0];
 		for (auto crop:crops) {
+			//if (crop.conf>ret_crop.conf) {
 			if (crop.conf>ret_crop.conf) {
 				ret_crop=crop;
 			}
 		}
-		//cout<<"ret_crop: "<< ret_crop.rect <<endl;
-		//cout<< "mat size: " << ret_crop.mat->size() << endl;
-		//cout<< "mat w: " << ret_crop.mat->size().width << endl;
-		//cout<< "mat h: " << ret_crop.mat->size().height << endl;
-		cv::Mat mat = ret_crop.mat->operator()(ret_crop.rect);
+        cv::Mat mat;
+        //mat=ret_crop.mat->operator()(ret_crop.rect);
+        Aligner aligner;
+
+        cv::Mat aligned_mat;
+        align(*ret_crop.mat, ret_crop.pts, &aligned_mat);
+        std::vector<cv::Point2f> pts;
+        std::vector<facebox> boxes;
+        detect(aligned_mat, boxes);
+        if (boxes.size()!=0) {
+	        cv::Rect rect=boxes[0].rect;
+            for (auto box:boxes) {
+                if (box.rect.area()>rect.area()) {
+                    rect=box.rect;
+                }
+            }
+            auto size=aligned_mat.size();
+            rect=fit_rect(aligned_mat, rect);
+            std::cout << rect << std::endl;
+            std::cout << size << std::endl;
+            mat=aligned_mat.operator()(rect);
+        } else {
+            mat=ret_crop.mat->operator()(ret_crop.rect);
+        }
 #ifdef debug
 		face_mat=mat;
 #endif
 		kenxnet_genFaceFeature(this->h, mat, feature);
 	} else {
-		//eyeCoordinates.push_back(EyePair(false, false, 0, 0, 0, 0));
 		auto size=mats[0].size();
 		kenxnet_genFaceFeature(this->h, mats[0], feature);
 	}

@@ -2,7 +2,10 @@ cmake_minimum_required(VERSION 2.8)
 
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -std=c++0x -Wl,-rpath=./")
 include_directories (${CMAKE_CURRENT_SOURCE_DIR}/../include ${CMAKE_CURRENT_SOURCE_DIR}/../../../common/src/include)
-
+if($ENV{debug})
+    message("debug")
+    add_definitions(-Ddebug=1)
+endif()
 # Configure built shared libraries in top-level lib directory
 set (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../../lib_isap7)
 
