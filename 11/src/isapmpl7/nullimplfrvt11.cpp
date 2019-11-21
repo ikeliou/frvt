@@ -38,6 +38,9 @@ typedef struct Crop {
 	cv::Rect rect;
 	cv::Mat *mat;
     std::vector<cv::Point2f> pts;
+    //FaceInfo info;
+    cv::Mat trans_mat;
+    int dir;
 } Crop;
 
 ReturnStatus
@@ -98,22 +101,6 @@ NullImplFRVT11::createTemplate(
 				crop.rect=fit_rect(mats[i], rect);
 				crop.conf=boxes[j].score;
 				//cout << "crop:" << crop.rect <<endl;
-                /*
-				if (crop.rect.x<0) {
-					crop.rect.x=0;
-				}
-				if (crop.rect.y<0) {
-					crop.rect.y=0;
-				}
-				
-				auto size = mats[i].size();
-				if (crop.rect.x + crop.rect.width > size.width) {
-					crop.rect.width=size.width-crop.rect.x;
-				}
-				if (crop.rect.y + crop.rect.height > size.height) {
-					crop.rect.height=size.height-crop.rect.y;
-				}
-                */
 				//cout << crop.rect << endl;
 
 				unsigned int xl=pts[0].x;
@@ -142,24 +129,45 @@ NullImplFRVT11::createTemplate(
 			eyeCoordinates.push_back(EyePair(false, false, 0, 0, 0, 0));
 		}
 	}
-	//cout<<"set eyes"<<endl;
+	cout<<"set eyes"<<endl;
 	// set eyes
 	std::vector<float> feature;
 	if (crops.size()>0) {
-		Crop ret_crop=crops[0];
-		for (auto crop:crops) {
-			//if (crop.conf>ret_crop.conf) {
-			if (crop.conf>ret_crop.conf) {
-				ret_crop=crop;
-			}
+		for (auto &crop:crops) {
+            cout << "test 1" << endl;
+            auto info = get_face_info(crop.pts);
+            cout << "test 2" << endl;
+            cout << info.errors.size() << endl;
+            for (auto error:info.errors) {
+                cout << error << " ";
+            }
+            cout << endl;
+            crop.dir = std::min_element(info.errors.begin(), info.errors.end()) - info.errors.begin();
+            cout << "test 3" << endl;
+            crop.trans_mat = info.trans_mats[crop.dir];
 		}
+        cout << "test 4" << endl;
+		Crop ret_crop=crops[0];
+		for (auto &crop:crops) {
+            if (crop.dir!=ret_crop.dir) {
+                auto ret_v=std::max(ret_crop.dir,2)-std::min(ret_crop.dir,2);
+                auto v=std::max(crop.dir,2)-std::min(crop.dir,2);
+                if (v<ret_v) {
+                    ret_crop=crop;
+                }
+            } else {
+                if (crop.rect.area()>ret_crop.rect.area()) {
+                    ret_crop=crop;
+                }
+            }
+        }
         cv::Mat mat;
-        //mat=ret_crop.mat->operator()(ret_crop.rect);
-        Aligner aligner;
-
+        mat=ret_crop.mat->operator()(ret_crop.rect);
+        
+        /*
         cv::Mat aligned_mat;
-        align(*ret_crop.mat, ret_crop.pts, &aligned_mat);
-        std::vector<cv::Point2f> pts;
+        //align(*ret_crop.mat, ret_crop.pts, &aligned_mat);
+        align_with_trans(*ret_crop.mat, ret_crop.trans_mat, &aligned_mat);
         std::vector<facebox> boxes;
         detect(aligned_mat, boxes);
         if (boxes.size()!=0) {
@@ -177,6 +185,7 @@ NullImplFRVT11::createTemplate(
         } else {
             mat=ret_crop.mat->operator()(ret_crop.rect);
         }
+        */
 #ifdef debug
 		face_mat=mat;
 #endif
