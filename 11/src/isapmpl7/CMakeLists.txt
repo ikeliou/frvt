@@ -7,7 +7,7 @@ if($ENV{debug})
     add_definitions(-Ddebug=1)
 endif()
 # Configure built shared libraries in top-level lib directory
-set (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../../lib_isap7)
+set (CMAKE_LIBRARY_OUTPUT_DIRECTORY $ENV{out})
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/opencv/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/ncnn/src)
@@ -15,7 +15,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/ncnn/build/src)
 
 link_directories(${CMAKE_CURRENT_SOURCE_DIR}/opencv/lib)
 #link_directories(${CMAKE_CURRENT_SOURCE_DIR}/ncnn/build/src)
-link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../lib_isap7)
+link_directories($ENV{out})
 # Build the shared libraries
 add_library (frvt_11_isap_001 SHARED nullimplfrvt11.cpp)
 target_link_libraries(frvt_11_isap_001 kenxnet)

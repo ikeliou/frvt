@@ -38,9 +38,11 @@ typedef struct Crop {
 	cv::Rect rect;
 	cv::Mat *mat;
     std::vector<cv::Point2f> pts;
-    //FaceInfo info;
+    int error;
     cv::Mat trans_mat;
     int dir;
+    int pose_type;
+    bool pose_ret;
 } Crop;
 
 ReturnStatus
@@ -115,6 +117,8 @@ NullImplFRVT11::createTemplate(
 				crop.eye.w=crop.rect.width;
 				crop.eye.h=crop.rect.height;
 				crop.eye.conf=crop.conf;
+                bool ret = check_large_pose(crop.pts, crop.rect, &crop.eye.pose_type);
+                crop.eye.pose_ret = ret ? 1 : 0;
 #endif
 				crop.mat=&mats[i];
 				//crops.push_back(crop);
@@ -135,7 +139,7 @@ NullImplFRVT11::createTemplate(
 	if (crops.size()>0) {
 		for (auto &crop:crops) {
             cout << "test 1" << endl;
-            auto info = get_face_info(crop.pts);
+            auto info = get_face_info(*crop.mat, crop.pts);
             cout << "test 2" << endl;
             cout << info.errors.size() << endl;
             for (auto error:info.errors) {
@@ -145,10 +149,13 @@ NullImplFRVT11::createTemplate(
             crop.dir = std::min_element(info.errors.begin(), info.errors.end()) - info.errors.begin();
             cout << "test 3" << endl;
             crop.trans_mat = info.trans_mats[crop.dir];
+            crop.error = info.errors[2];
+            crop.pose_ret = check_large_pose(crop.pts, crop.rect, &crop.pose_type);
 		}
         cout << "test 4" << endl;
 		Crop ret_crop=crops[0];
 		for (auto &crop:crops) {
+            /*
             if (crop.dir!=ret_crop.dir) {
                 auto ret_v=std::max(ret_crop.dir,2)-std::min(ret_crop.dir,2);
                 auto v=std::max(crop.dir,2)-std::min(crop.dir,2);
@@ -160,14 +167,40 @@ NullImplFRVT11::createTemplate(
                     ret_crop=crop;
                 }
             }
+            */
+            /*
+            if (!crop.pose_ret) continue;
+
+            int lv_new=(crop.pose_type+1)/2;
+            int lv_old=(ret_crop.pose_type+1)/2;
+            if (lv_new==lv_old && crop.rect.area()>ret_crop.rect.area()) {
+                ret_crop=crop;
+            }
+            if (lv_new<lv_old) {
+                ret_crop=crop;
+            }
+            */
+            /*
+            if (crop.error < ret_crop.error) {
+                ret_crop = crop;
+            }
+            */
+            int conf=(int)(crop.conf*100);
+            int ret_conf=(int)(ret_crop.conf*100);
+            if (conf > ret_conf) {
+                ret_crop = crop;
+            }
+            if (conf == ret_conf && crop.rect.area()>ret_crop.rect.area()) {
+                ret_crop = crop;
+            }
+
         }
         cv::Mat mat;
-        mat=ret_crop.mat->operator()(ret_crop.rect);
-        
-        /*
+        //mat=ret_crop.mat->operator()(ret_crop.rect);
         cv::Mat aligned_mat;
         //align(*ret_crop.mat, ret_crop.pts, &aligned_mat);
-        align_with_trans(*ret_crop.mat, ret_crop.trans_mat, &aligned_mat);
+        //align_with_trans(*ret_crop.mat, ret_crop.trans_mat, &aligned_mat);
+        aligned_mat = align_img(*ret_crop.mat, ret_crop.pts);
         std::vector<facebox> boxes;
         detect(aligned_mat, boxes);
         if (boxes.size()!=0) {
@@ -185,8 +218,9 @@ NullImplFRVT11::createTemplate(
         } else {
             mat=ret_crop.mat->operator()(ret_crop.rect);
         }
-        */
 #ifdef debug
+        //align(*ret_crop.mat, ret_crop.pts, &face_mat, 1);
+        //align_with_trans(*ret_crop.mat, ret_crop.trans_mat, &face_mat);
 		face_mat=mat;
 #endif
 		kenxnet_genFaceFeature(this->h, mat, feature);
