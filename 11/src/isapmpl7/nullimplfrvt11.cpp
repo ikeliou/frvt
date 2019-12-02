@@ -28,6 +28,7 @@ NullImplFRVT11::initialize(const std::string &configDir)
 	this->configDir = configDir;
    	this->h = kenxnet_init( this->configDir+"/models" );
     init( this->configDir+"/retina.param", this->configDir+"/retina.bin" );
+    lffd_init( this->configDir );
 	//cout<< this-> h << endl;
     return ReturnStatus(ReturnCode::Success);
 }
