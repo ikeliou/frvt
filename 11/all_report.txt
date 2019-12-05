@@ -1,0 +1,99 @@
+==> model_isap/ijba11_20191109-000924/report_new.txt <==
+average fnmr: 0.226357 std: 0.021617, when fmr=0.01
+average acc: 0.908098 std: 0.007520
+
+==> model_isap/ijba11_20191109-000953/report_new.txt <==
+average fnmr: 0.199687 std: 0.013097, when fmr=0.01
+average acc: 0.914194 std: 0.006140
+
+==> model_isap/ijba11_20191111-131800-step_173_align/report_new.txt <==
+average fnmr: 0.222031 std: 0.019797, when fmr=0.01
+average acc: 0.928375 std: 0.005296
+
+==> model_isap/ijba11_20191111-131800-step_173/report_new.txt <==
+average fnmr: 0.196608 std: 0.021512, when fmr=0.01
+average acc: 0.934276 std: 0.006200
+
+==> model_isap/ijba11_20191111-131800-step_173_retinaface_mobile/report_new.txt <==
+average fnmr: 0.274863 std: 0.023849, when fmr=0.01
+average acc: 0.927400 std: 0.004722
+
+==> model_isap/ijba11_20191111-131800-step_524/report_new.txt <==
+average fnmr: 0.208773 std: 0.018926, when fmr=0.01
+average acc: 0.929406 std: 0.006033
+
+==> model_isap/ijba11_20191112-102138-step_191/report_new.txt <==
+average fnmr: 0.211733 std: 0.015680, when fmr=0.01
+average acc: 0.909974 std: 0.006677
+
+==> model_isap/ijba11_20191116-203546-step162/report_new.txt <==
+average fnmr: 0.214759 std: 0.019588, when fmr=0.01
+average acc: 0.909541 std: 0.006494
+
+==> model_isap/ijba11_20191117-123717-step159/report_new.txt <==
+average fnmr: 0.242346 std: 0.023850, when fmr=0.01
+average acc: 0.915065 std: 0.004539
+
+==> model_isap/ijba11_20191118-211356-step106/report_new.txt <==
+average fnmr: 0.291588 std: 0.027374, when fmr=0.01
+average acc: 0.914945 std: 0.005639
+
+==> model_isap/ijba11_first/report_new.txt <==
+average fnmr: 0.329340 std: 0.020533, when fmr=0.01
+average acc: 0.893290 std: 0.006192
+
+==> model_isap/ijba11_Model_0000_retinaface/report_new.txt <==
+average fnmr: 0.255732 std: 0.018421, when fmr=0.01
+average acc: 0.890424 std: 0.007570
+
+==> model_isap/ijba11_Model_0001/report_new.txt <==
+average fnmr: 0.292198 std: 0.016325, when fmr=0.01
+average acc: 0.892313 std: 0.004010
+
+==> model_isap/ijba11_Model_0001_retinaface/report_new.txt <==
+average fnmr: 0.256917 std: 0.013989, when fmr=0.01
+average acc: 0.895790 std: 0.005890
+
+==> model_isap/ijba11_Model_0002/report_new.txt <==
+average fnmr: 0.414933 std: 0.019311, when fmr=0.01
+average acc: 0.846532 std: 0.006773
+
+==> model_isap/ijba11_Model_0002_retinaface/report_new.txt <==
+average fnmr: 0.347176 std: 0.017048, when fmr=0.01
+average acc: 0.858878 std: 0.006830
+
+==> model_isap/ijba11_Model_0003/report_new.txt <==
+average fnmr: 0.267286 std: 0.011433, when fmr=0.01
+average acc: 0.896957 std: 0.004345
+
+==> model_isap/ijba11_Model_0003_retinaface_mobile/report_new.txt <==
+average fnmr: 0.332688 std: 0.024966, when fmr=0.01
+average acc: 0.881608 std: 0.008619
+
+==> model_isap/ijba11_Model_0003_retinaface/report_new.txt <==
+average fnmr: 0.234063 std: 0.014390, when fmr=0.01
+average acc: 0.902798 std: 0.006631
+
+==> model_isap/ijba11_Model_0004/report_new.txt <==
+average fnmr: 0.336603 std: 0.017796, when fmr=0.01
+average acc: 0.871869 std: 0.005621
+
+==> model_isap/ijba11_Model_0004_retinaface/report_new.txt <==
+average fnmr: 0.284518 std: 0.022367, when fmr=0.01
+average acc: 0.882942 std: 0.006130
+
+==> model_isap/ijba11_Model_0005_align/report_new.txt <==
+average fnmr: 0.222518 std: 0.022250, when fmr=0.01
+average acc: 0.922509 std: 0.006165
+
+==> model_isap/ijba11_Model_0005/report_new.txt <==
+average fnmr: 0.232947 std: 0.017391, when fmr=0.01
+average acc: 0.898350 std: 0.007781
+
+==> model_isap/ijba11_Model_0005_retinaface_mobile/report_new.txt <==
+average fnmr: 0.326232 std: 0.031139, when fmr=0.01
+average acc: 0.889056 std: 0.008154
+
+==> model_isap/ijba11_Model_0006/report_new.txt <==
+average fnmr: 0.300434 std: 0.027943, when fmr=0.01
+average acc: 0.886214 std: 0.009233

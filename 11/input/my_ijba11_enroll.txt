@@ -1,0 +1,9 @@
+192 ../../ijba11/split1/192/101_531.ppm MUGSHOT ../../ijba11/split1/192/101_534.ppm MUGSHOT ../../ijba11/split1/192/101_537.ppm MUGSHOT
+193 ../../ijba11/split1/192/101_531.ppm MUGSHOT
+1 ../../ijba11/split1/5499/2102_10281.ppm MUGSHOT
+2 ../../ijba11/split1/5499/2102_10288.ppm MUGSHOT
+3 ../../ijba11/split1/5499/2102_10289.ppm MUGSHOT
+11 ../../ijba11/split1/109/1037_5464.ppm MUGSHOT
+22 ./flip_1037_5464.ppm MUGSHOT
+33 ../../ijba11/split1/109/1037_5488.ppm MUGSHOT
+44 ../../ijba11/split1/109/1037_5473.ppm MUGSHOT

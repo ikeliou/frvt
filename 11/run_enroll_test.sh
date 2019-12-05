@@ -12,6 +12,6 @@ fi
 echo $inputFile $outputDir
 templatesDir=$outputDir/templates
 mkdir -p $templatesDir
-./scripts/compile_and_link.sh
+#./scripts/compile_and_link.sh
 bin/validate11 createTemplate -x enroll -c $tempConfigDir -o $outputDir -h $outputStem -i $inputFile -t $numForks -j $templatesDir
 

@@ -8,10 +8,10 @@ normal=$(tput sgr0)
 # Check version of OS
 reqOS="CentOS Linux release 7.6.1810 (Core) "
 currentOS=$(cat /etc/centos-release)
-if [ "$reqOS" != "$currentOS" ]; then
-	echo "${bold}[ERROR] You are not running the correct version of the operating system, which should be $reqOS.  Please install the correct operating system and re-run this validation package.${normal}"
-	exit $failure
-fi
+#if [ "$reqOS" != "$currentOS" ]; then
+#	echo "${bold}[ERROR] You are not running the correct version of the operating system, which should be $reqOS.  Please install the correct operating system and re-run this validation package.${normal}"
+#	exit $failure
+#fi
 
 # Install the necessary packages to run validation
 echo -n "Checking installation of required packages "

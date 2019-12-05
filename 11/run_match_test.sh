@@ -12,5 +12,5 @@ fi
 templatesDir=$outputDir/templates
 
 echo $inputFile $outputDir
-./scripts/compile_and_link.sh
+#./scripts/compile_and_link.sh
 bin/validate11 match -c $configDir -o $outputDir -h $outputStem -i $inputFile -t $numForks -j $templatesDir

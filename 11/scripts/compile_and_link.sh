@@ -4,6 +4,15 @@ failure=1
 
 FRVTLIB="libfrvt_11_<company>_<three digit sequence>.so"
 root=$(pwd)
+if [ "$1" != "" ]; then
+    root=`readlink -f $1`
+fi
+export root
+if [ "$2" != "" ]; then
+    debug=1
+    export debug
+    echo debug
+fi
 approot=$root/bin
 libroot=$root/lib
 
@@ -29,11 +38,12 @@ export FRVT_IMPL_LIB
 
 echo "Attempting to compile and link $libstring against test harness."
 rm -rf build; mkdir -p build; cd build
-cmake ../ > /dev/null; make
+cmake ../ ; make;
 cd $root;
 if [ ! -f "bin/validate11" ]; then
 	echo "[ERROR] There were errors during compilation of your library with the validation test harness.  Please investigate and re-compile."
 	exit $failure
 fi
+cd -
 echo "[SUCCESS] Built executable in $approot."
 exit $success

@@ -3,7 +3,7 @@ import sys
 import cv2
 import os
 import fnmatch
-imgdir = "/home/data/lfw"
+imgdir = "../common/lfw"
 images = []
 for root, dirnames, filenames in os.walk(imgdir):
 	for filename in filenames:
